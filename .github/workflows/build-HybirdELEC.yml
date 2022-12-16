@@ -101,16 +101,15 @@ jobs:
         uses: ncipollo/release-action@main
         if: env.PACKAGED_STATUS == 'success' && !cancelled()
         with:
-          tag: Armbian_Aml${{ env.ARMBIAN_RELEASE }}${{ env.PACKAGED_OUTPUTDATE }}
-          artifacts: ${{ env.PACKAGED_OUTPUTPATH }}/*
+          artifacts: "/workdir/HybridELEC/target/*.gz,/workdir/HybridELEC/target/*.sha256"
           allowUpdates: true
           token: ${{ secrets.GH_TOKEN }}
           body: |
-            This is Armbian image for Amlogic s9xxx tv box
+            This is hybridELEC image for Amlogic sbc
             * Firmware information
-            Default username: root
-            Default password: 1234
-            Install to EMMC command: armbian-install
-            Update command: armbian-update
+            Default username:
+            Default password:
+            Install to EMMC command: 
+            Update command: 
 
 
