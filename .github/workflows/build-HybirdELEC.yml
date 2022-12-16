@@ -32,6 +32,7 @@ jobs:
         run: |
           sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo timedatectl set-timezone "$TZ"
+          apt install gcc make git unzip wget xz-utils libsdl2-dev libsdl2-mixer-dev libfreeimage-dev libfreetype6-dev libcurl4-openssl-dev rapidjson-dev libasound2-dev libgl1-mesa-dev build-essential libboost-all-dev cmake fonts-droid-fallback libvlc-dev libvlccore-dev vlc-bin texinfo premake4 golang libssl-dev curl patchelf xmlstarlet default-jre xsltproc -y
           sudo mkdir -p /workdir
           sudo chown $USER:$GROUPS /workdir
           cd /workdir
@@ -57,7 +58,6 @@ jobs:
 
           # checkout the EmuELEC branch
           git checkout emuelec-4.5
-
           # set version for EmuELEC
           export HYBRID_VERSION_EE=v4.5
           export CUSTOM_VERSION=${HYBRID_VERSION_EE}-hybrid
