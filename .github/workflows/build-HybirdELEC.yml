@@ -31,6 +31,8 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo timedatectl set-timezone "$TZ"
+          #LibreELEC
+          sudo apt install gcc make git unzip wget xz-utils bc gperf zip g++ xfonts-utils xsltproc openjdk-11-jre-headless -y
           #CoreELEC
           sudo apt install libparse-yapp-perl gperf xfonts-utils libxml-parser-perl patchutils lzop -y
           #EmuELEC
