@@ -1,0 +1,116 @@
+#==========================================================================
+# Description: Build Armbian For Amlogic s9xxx tv box
+# Copyright (C) 2021 https://github.com/ophub/amlogic-s9xxx-armbian
+#==========================================================================
+
+name: Rebuild armbian
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      elec_url:
+        description: "Set elec path."
+        required: false
+        default: ""
+      elec_soc:
+        description: "Select Amlogic SoC."
+        required: false
+        default: "generic Amlogic-ng"
+        type: choice
+        options:
+          - all
+          - generic Amlogic-ng
+          
+      elec_size:
+        description: "Set img size(Unit: MiB)."
+        required: false
+        default: "2748"
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install -y $(curl -fsSL https://is.gd/depend_ubuntu2204_armbian)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
+          sudo mkdir -p /workdir
+          sudo chown $USER:$GROUPS /workdir
+          # Get the url of the rebuild armbian file
+          elec_url="${{ github.event.inputs.elec_url }}"
+          elec_soc=${{ github.event.inputs.elec_soc }}
+          elec_size=${{ github.event.inputs.elec_size }}
+          
+          cd /workdir
+          # clone the repo
+          git clone https://github.com/7Ji/HybridELEC
+          cd HybridELEC
+          # set some shared environment variables
+          export PROJECT=Amlogic-ce
+          export DEVICE=Amlogic-ng
+
+          # optionally set builder name
+          export BUILDER_NAME=xiayang
+
+          # checkout the CoreELEC branch
+          git checkout coreelec-19
+
+          # set version for CoreELEC
+          export HYBRID_VERSION_CE=19.4-Matrix
+          export CUSTOM_VERSION=${HYBRID_VERSION_CE}-hybrid
+
+          # build CE kernel and system images
+          make system
+
+          # checkout the EmuELEC branch
+          git checkout emuelec-4.5
+
+          # set version for EmuELEC
+          export HYBRID_VERSION_EE=v4.5
+          export CUSTOM_VERSION=${HYBRID_VERSION_EE}-hybrid
+
+          # build EE kernel and system images
+          make system
+
+          # get back to the main branch
+          git checkout hybrid-ng
+
+          # combine the image
+          make
+          
+          # sha256sum
+          IMAGE_TARGET_compressed="$DIR_TARGET/HybridELEC-$DEVICE-CE_${HYBRID_VERSION_CE}_EE_$HYBRID_VERSION_EE.img.gz"
+          sha256sum $IMAGE_TARGET_compressed > $IMAGE_TARGET_compressed.sha256
+
+      - name: Upload image to Release
+        uses: ncipollo/release-action@main
+        if: env.PACKAGED_STATUS == 'success' && !cancelled()
+        with:
+          tag: Armbian_Aml${{ env.ARMBIAN_RELEASE }}${{ env.PACKAGED_OUTPUTDATE }}
+          artifacts: ${{ env.PACKAGED_OUTPUTPATH }}/*
+          allowUpdates: true
+          token: ${{ secrets.GH_TOKEN }}
+          body: |
+            This is Armbian image for Amlogic s9xxx tv box
+            * Firmware information
+            Default username: root
+            Default password: 1234
+            Install to EMMC command: armbian-install
+            Update command: armbian-update
+
+
